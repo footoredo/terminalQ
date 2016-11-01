@@ -57,16 +57,19 @@ ptwebqq = s.cookies['ptwebqq']
 r = s.get("http://s.web2.qq.com/api/getvfwebqq?ptwebqq=%s&clientid=53999199&psessionid=&t=1477913618026" % ptwebqq, headers = {'referer': 'http://s.web2.qq.com/proxy.html?v=20130916001&callback=1&id=1'})
 vfwebqq = r.json()['result']['vfwebqq']
 
-data = {
-	"ptwebqq": ptwebqq,
-	"clientid": 53999199,
-	"psessionid": "",
-	"status": "online"
-}
-r = s.post("http://d1.web2.qq.com/channel/login2", headers = {"referer": "http://d1.web2.qq.com/proxy.html?v=20151105001&callback=1&id=2"},
-		data = {"r": json.dumps(data)})
-uin = r.json()['result']['uin']
-psessionid = r.json()['result']['psessionid']
+while (True):
+	data = {
+		"ptwebqq": ptwebqq,
+		"clientid": 53999199,
+		"psessionid": "",
+		"status": "online"
+	}
+	r = s.post("http://d1.web2.qq.com/channel/login2", headers = {"referer": "http://d1.web2.qq.com/proxy.html?v=20151105001&callback=1&id=2"},
+			data = {"r": json.dumps(data)})
+	if r.status_code == 200 and 'result' in r.json():
+		uin = r.json()['result']['uin']
+		psessionid = r.json()['result']['psessionid']
+		break
 
 def send_msg(user_id, msg):
 	data = {
@@ -159,20 +162,35 @@ def get_msg():
 	r = s.post("http://d1.web2.qq.com/channel/poll2",
 		headers = {"referer": "http://d1.web2.qq.com/proxy.html?v=20151105001&callback=1&id=2"},
 		data = {"r": json.dumps(data)})
-	if r.status_code != 200 or not "retcode" in r.json() or r.json()["retcode"] != 0:
+	if r.status_code != 200 or not "result" in r.json():
 		time.sleep(0.2)
 		get_msg()
-	print hash_table_rev[r.json()['result']['value']['from_uin']] + "> " + r.json()['result']['value']['content'][1]
+	else:
+		for msg in r.json()['result']:
+			if (msg['poll_type'] == "message"):
+				print hash_table_rev[msg['value']['from_uin']] + "> " + msg['value']['content'][1].encode('utf8')
+	#print hash_table_rev[r.json()['result'][0]['value']['from_uin']] + "> " + r.json()['result'][0]['value']['content'][1]
 
 def talk(name):
 	the_uin = hash_table[name]
+	times = 1
 	while (True):
 		msg = raw_input('Message> ')
 		if msg == "quit":
 			break
 		elif msg == "listen":
-			get_msg()
-		send_msg(the_uin, msg)
+			try:
+				while (True):
+					get_msg()
+					time.sleep(0.2)
+			except KeyboardInterrupt:
+				pass
+
+		elif msg == "times":
+			times = int(raw_input("times> "))
+		else:
+			for i in range(0, times):
+				send_msg(the_uin, msg)
 
 while (True):
 	op = raw_input("> ")
