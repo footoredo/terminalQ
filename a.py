@@ -97,7 +97,12 @@ def send_msg(user_id, msg):
 }
 	#print json.dumps(data, ensure_ascii=False)
 
-	r = s.post("https://d1.web2.qq.com/channel/send_buddy_msg2", headers = {"referer": "https://d1.web2.qq.com/cfproxy.html?v=20151105001&callback=1"}, data = {"r": json.dumps(data, ensure_ascii=False)})
+	r = s.post("https://d1.web2.qq.com/channel/send_buddy_msg2",
+		headers = {
+			"referer": "https://d1.web2.qq.com/cfproxy.html?v=20151105001&callback=1",
+			"origin": "https://d1.web2.qq.com",
+			"host": "d1.web2.qq.com"
+		}, data = {"r": json.dumps(data, ensure_ascii=False)})
 	print r.content
 	if r.status_code != 200 or "errmsg" in r.json():
 		time.sleep(0.2)
